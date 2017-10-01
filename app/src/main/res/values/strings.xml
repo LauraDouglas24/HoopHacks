@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">HoopHacks</string>
+    <string name="status_fmt">Email User: %1$s (verified: %2$b)</string>
+    <string name="firebase_status_fmt">Firebase User: %s</string>
 </resources>

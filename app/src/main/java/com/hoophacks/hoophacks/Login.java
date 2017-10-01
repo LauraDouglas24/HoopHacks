@@ -1,43 +1,62 @@
 package com.hoophacks.hoophacks;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.SignInButton;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 
-public class Login extends AppCompatActivity implements View.OnClickListener {
+public class Login extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener, View.OnClickListener {
 
+    // Shared components
+    private TextView tvStatus;
+    private String TAG = "Login";
+
+    // Email and Password Login
     private EditText etEmail;
     private EditText etPassword;
-    private TextView tvStatus;
-
+    private Button bCreateUser;
+    private Button bLogIn;
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
+
+    // Google Login
+    private SignInButton bGoogleLogIn;
+    GoogleApiClient mGoogleApiClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        etEmail = (EditText) findViewById(R.id.etEmail);
-        etPassword = (EditText) findViewById(R.id.etPassword);
+        // Shared components
         tvStatus = (TextView) findViewById(R.id.tvStatus);
 
-        findViewById(R.id.bLogIn).setOnClickListener(this);
-        findViewById(R.id.bCreateUser).setOnClickListener(this);
-        findViewById(R.id.bLogOut).setOnClickListener(this);
+        // Email and Password Login
+        etEmail = (EditText) findViewById(R.id.etEmail);
+        etPassword = (EditText) findViewById(R.id.etPassword);
+        bCreateUser = (Button) findViewById(R.id.bCreateUser);
+        bCreateUser.setOnClickListener(this);
+        bLogIn = (Button) findViewById(R.id.bLogIn);
+        bLogIn.setOnClickListener(this);
 
         mAuth = FirebaseAuth.getInstance();
 
@@ -52,6 +71,13 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
                 }
             }
         };
+
+        // Google Login
+        bGoogleLogIn = (SignInButton) findViewById(R.id.bGoogleLogIn);
+        bGoogleLogIn.setOnClickListener(this);
+
+        GoogleSignInOptions mGoogleSignInOptions = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestEmail().build();
+        mGoogleApiClient = new GoogleApiClient.Builder(this).enableAutoManage(this,this).addApi(Auth.GOOGLE_SIGN_IN_API, mGoogleSignInOptions).build();
     }
 
     @Override
@@ -60,7 +86,10 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         mAuth.addAuthStateListener(mAuthListener);
 
         FirebaseUser currentUser = mAuth.getCurrentUser();
-        updateInfo(currentUser);
+        if(currentUser != null){
+            Intent myIntent = new Intent(Login.this, UserFeed.class);
+            Login.this.startActivity(myIntent);
+        }
     }
 
     @Override
@@ -71,39 +100,22 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         }
     }
 
+    // Shared components - onClick
     @Override
     public void onClick(View v) {
-        int i = v.getId();
-        if (i == R.id.bCreateUser) {
-            Log.d("Firebase", "create user");
-            createUser(etEmail.getText().toString(), etPassword.getText().toString());
-        } else if (i == R.id.bLogIn) {
-            Log.d("Firebase", "log in");
-            ///logIn(etEmail.getText().toString(), etPassword.getText().toString());
-        } else if (i == R.id.bLogOut) {
-            Log.d("Firebase", "logout");
-            ///logOut();
+        switch (v.getId()){
+            case R.id.bCreateUser:
+                createUser(etEmail.getText().toString(), etPassword.getText().toString());
+            case R.id.bLogIn:
+                logIn(etEmail.getText().toString(), etPassword.getText().toString());
+                break;
+            case R.id.bGoogleLogIn:
+                googleLogIn();
+                break;
         }
     }
 
-    private void updateInfo(FirebaseUser user){
-        if (user != null) {
-            tvStatus.setText(getString(R.string.status_fmt, user.getEmail(), user.isEmailVerified()));
-            tvStatus.setText(getString(R.string.firebase_status_fmt, user.getUid()));
-
-            findViewById(R.id.email_password_buttons).setVisibility(View.GONE);
-            findViewById(R.id.email_password_fields).setVisibility(View.GONE);
-            findViewById(R.id.signed_in_buttons).setVisibility(View.VISIBLE);
-        } else {
-            tvStatus.setText("Logged Out");
-            tvStatus.setText(null);
-
-            findViewById(R.id.email_password_buttons).setVisibility(View.VISIBLE);
-            findViewById(R.id.email_password_fields).setVisibility(View.VISIBLE);
-            findViewById(R.id.signed_in_buttons).setVisibility(View.GONE);
-        }
-    }
-
+    // Email and Password - createUser
     private void createUser(String email, String password){
         Log.d("Random", "createUser");
         mAuth.createUserWithEmailAndPassword(email, password)
@@ -111,19 +123,19 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
-                            Log.d("Random", "if");
                             FirebaseUser user = mAuth.getCurrentUser();
-                            updateInfo(user);
+
+                            Intent myIntent = new Intent(Login.this, UserFeed.class);
+                            Login.this.startActivity(myIntent);
                         } else {
-                            Log.d("Random", "else");
-                            Toast.makeText(Login.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
-                            updateInfo(null);
+                            tvStatus.setText("Authentication failed.");
                         }
                     }
                 });
         Log.d("Random", "createdUser");
     }
 
+    // Email and Password - logIn
     private void logIn(String email, String password){
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
@@ -131,20 +143,17 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
                             FirebaseUser user = mAuth.getCurrentUser();
-                            updateInfo(user);
+
+                            Intent myIntent = new Intent(Login.this, UserFeed.class);
+                            Login.this.startActivity(myIntent);
                         } else {
-                            Toast.makeText(Login.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
-                            updateInfo(null);
+                            tvStatus.setText("Authentication failed.");
                         }
                     }
                 });
     }
 
-    private void logOut(){
-        mAuth.signOut();
-        updateInfo(null);
-    }
-
+    // Email and Password - validation
     private boolean validation(){
         boolean valid = true;
 
@@ -165,6 +174,44 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         }
 
         return valid;
+    }
+
+    // Google Login - googleLogIn
+    private void googleLogIn(){
+        Intent logInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
+        startActivityForResult(logInIntent, 9001);
+    }
+
+    // Google Login - onActivityResult
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if(requestCode == 9001){
+            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
+            handleSignInResult(result);
+        }
+    }
+
+    // Google Login - handleSignInResult
+    private void handleSignInResult(GoogleSignInResult result)
+    {
+        if(result.isSuccess()){
+            GoogleSignInAccount account = result.getSignInAccount();
+            tvStatus.setText("Hello " + account.getDisplayName());
+
+            Intent myIntent = new Intent(Login.this, UserFeed.class);
+            Login.this.startActivity(myIntent);
+        }
+        else{
+
+        }
+    }
+
+    // Google Login - onConnectionFailed
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        Log.d(TAG, "onConnectionFailed: " + connectionResult);
     }
 
 }

@@ -42,6 +42,7 @@ public class Login extends AppCompatActivity implements GoogleApiClient.OnConnec
     private SignInButton bGoogleLogIn;
     GoogleApiClient mGoogleApiClient;
 
+    // Shared components - onCreate
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -65,9 +66,10 @@ public class Login extends AppCompatActivity implements GoogleApiClient.OnConnec
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
                 FirebaseUser user = firebaseAuth.getCurrentUser();
                 if (user != null) {
-                    Log.d("Firebase", "onAuthStateChanged:signed_in:" + user.getUid());
+                    Intent myIntent = new Intent(Login.this, UserFeed.class);
+                    Login.this.startActivity(myIntent);
                 } else {
-                    Log.d("Firebase", "onAuthStateChanged:signed_out");
+                    tvStatus.setText("Please log in.");
                 }
             }
         };
@@ -80,18 +82,14 @@ public class Login extends AppCompatActivity implements GoogleApiClient.OnConnec
         mGoogleApiClient = new GoogleApiClient.Builder(this).enableAutoManage(this,this).addApi(Auth.GOOGLE_SIGN_IN_API, mGoogleSignInOptions).build();
     }
 
+    // Shared components - onStart
     @Override
     public void onStart() {
         super.onStart();
         mAuth.addAuthStateListener(mAuthListener);
-
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if(currentUser != null){
-            Intent myIntent = new Intent(Login.this, UserFeed.class);
-            Login.this.startActivity(myIntent);
-        }
     }
 
+    // Shared components - onStop
     @Override
     protected void onStop() {
         super.onStop();
@@ -117,7 +115,6 @@ public class Login extends AppCompatActivity implements GoogleApiClient.OnConnec
 
     // Email and Password - createUser
     private void createUser(String email, String password){
-        Log.d("Random", "createUser");
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
@@ -132,48 +129,31 @@ public class Login extends AppCompatActivity implements GoogleApiClient.OnConnec
                         }
                     }
                 });
-        Log.d("Random", "createdUser");
     }
 
     // Email and Password - logIn
     private void logIn(String email, String password){
-        mAuth.signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if (task.isSuccessful()) {
-                            FirebaseUser user = mAuth.getCurrentUser();
+        Log.d(TAG, "logIn");
+        if(TextUtils.isEmpty(email) || TextUtils.isEmpty(password)){
+            tvStatus.setText("Email or Password musn't be empty.");
+        } else {
+            Log.d(TAG, "logIn ELSE");
+            mAuth.signInWithEmailAndPassword(email, password)
+                    .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                        @Override
+                        public void onComplete(@NonNull Task<AuthResult> task) {
+                            Log.d(TAG, "logIn onComplete");
+                            if (task.isSuccessful()) {
+                                FirebaseUser user = mAuth.getCurrentUser();
 
-                            Intent myIntent = new Intent(Login.this, UserFeed.class);
-                            Login.this.startActivity(myIntent);
-                        } else {
-                            tvStatus.setText("Authentication failed.");
+                                Intent myIntent = new Intent(Login.this, UserFeed.class);
+                                Login.this.startActivity(myIntent);
+                            } else {
+                                tvStatus.setText("Authentication failed.");
+                            }
                         }
-                    }
-                });
-    }
-
-    // Email and Password - validation
-    private boolean validation(){
-        boolean valid = true;
-
-        String email = etEmail.getText().toString();
-        if (TextUtils.isEmpty(email)) {
-            etEmail.setError("Required.");
-            valid = false;
-        } else {
-            etEmail.setError(null);
+                    });
         }
-
-        String password = etPassword.getText().toString();
-        if (TextUtils.isEmpty(password)) {
-            etPassword.setError("Required.");
-            valid = false;
-        } else {
-            etPassword.setError(null);
-        }
-
-        return valid;
     }
 
     // Google Login - googleLogIn

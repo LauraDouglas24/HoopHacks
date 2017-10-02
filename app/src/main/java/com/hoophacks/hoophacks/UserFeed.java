@@ -33,20 +33,24 @@ public class UserFeed extends AppCompatActivity implements View.OnClickListener{
         bLogOut = (Button) findViewById(R.id.bLogOut);
         bLogOut.setOnClickListener(this);
 
-        // Email and Password Login
         mAuth = FirebaseAuth.getInstance();
 
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
                 FirebaseUser user = firebaseAuth.getCurrentUser();
-                if (user != null) {
-                    Log.d("Firebase", "onAuthStateChanged:signed_in:" + user.getUid());
-                } else {
-                    Log.d("Firebase", "onAuthStateChanged:signed_out");
+                if (user == null) {
+                    Intent myIntent = new Intent(UserFeed.this, Login.class);
+                    UserFeed.this.startActivity(myIntent);
                 }
             }
         };
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mAuth.addAuthStateListener(mAuthListener);
     }
 
     // Shared components - onClick
@@ -62,7 +66,7 @@ public class UserFeed extends AppCompatActivity implements View.OnClickListener{
     // Shared components - logOut
     private void logOut(){
         //Auth.GoogleSignInApi.signOut(mGoogleApiClient);
-        //mAuth.signOut();
+        mAuth.signOut();
 
         Intent myIntent = new Intent(UserFeed.this, Login.class);
         UserFeed.this.startActivity(myIntent);

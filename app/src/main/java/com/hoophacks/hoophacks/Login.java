@@ -33,7 +33,7 @@ public class Login extends AppCompatActivity implements GoogleApiClient.OnConnec
     // Email and Password Login
     private EditText etEmail;
     private EditText etPassword;
-    private Button bCreateUser;
+//    private Button bCreateUser;
     private Button bLogIn;
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
@@ -54,8 +54,8 @@ public class Login extends AppCompatActivity implements GoogleApiClient.OnConnec
         // Email and Password Login
         etEmail = (EditText) findViewById(R.id.etEmail);
         etPassword = (EditText) findViewById(R.id.etPassword);
-        bCreateUser = (Button) findViewById(R.id.bCreateUser);
-        bCreateUser.setOnClickListener(this);
+        // bCreateUser = (Button) findViewById(R.id.bCreateUser);
+//        bCreateUser.setOnClickListener(this);
         bLogIn = (Button) findViewById(R.id.bLogIn);
         bLogIn.setOnClickListener(this);
 
@@ -102,8 +102,8 @@ public class Login extends AppCompatActivity implements GoogleApiClient.OnConnec
     @Override
     public void onClick(View v) {
         switch (v.getId()){
-            case R.id.bCreateUser:
-                createUser(etEmail.getText().toString(), etPassword.getText().toString());
+//            case R.id.bCreateUser:
+//                createUser(etEmail.getText().toString(), etPassword.getText().toString());
             case R.id.bLogIn:
                 logIn(etEmail.getText().toString(), etPassword.getText().toString());
                 break;
@@ -114,22 +114,22 @@ public class Login extends AppCompatActivity implements GoogleApiClient.OnConnec
     }
 
     // Email and Password - createUser
-    private void createUser(String email, String password){
-        mAuth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if (task.isSuccessful()) {
-                            FirebaseUser user = mAuth.getCurrentUser();
-
-                            Intent myIntent = new Intent(Login.this, UserFeed.class);
-                            Login.this.startActivity(myIntent);
-                        } else {
-                            tvStatus.setText("Authentication failed.");
-                        }
-                    }
-                });
-    }
+//    private void createUser(String email, String password){
+//        mAuth.createUserWithEmailAndPassword(email, password)
+//                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+//                    @Override
+//                    public void onComplete(@NonNull Task<AuthResult> task) {
+//                        if (task.isSuccessful()) {
+//                            FirebaseUser user = mAuth.getCurrentUser();
+//
+//                            Intent myIntent = new Intent(Login.this, UserFeed.class);
+//                            Login.this.startActivity(myIntent);
+//                        } else {
+//                            tvStatus.setText("Authentication failed.");
+//                        }
+//                    }
+//                });
+//    }
 
     // Email and Password - logIn
     private void logIn(String email, String password){
